@@ -11,48 +11,25 @@ var connection = mysql.createConnection({
 });
 
 var breaker = "-----------------------------"
-console.log(breaker)
-console.log("Welcome to Toymazon!")
-
-function start() {
+connection.connect(function (err) {
+    if (err) throw err;
     console.log(breaker)
-    inquirer
-        .prompt([{
-            name: "categories",
-            message: "What kind of products are you interested in?",
-            type: "list",
-            choices: ["Toys", "Accessories", "Clothing", "Books", "Kitchenware"]
-        }]).then(function (req) {
-            switch (req.categories) {
+    console.log("Welcome to Toymazon!")
+    console.log("Your customer id is: " + connection.threadId + "\n");
+    catalogue();
+});
 
-                case "Toys":
-                    console.log("You are in the Toys section.")
-                    console.log(breaker)
-                    return toys();
+function catalogue() {
+    console.log(breaker);
+    console.log("Here is the items available in store at the moment:\n");
+    connection.query("SELECT * FROM toymazon.store", function (err, res) {
+        if (err) throw err;
 
-                case "Accessories":
-                    return category();
-                case "Clothing":
-                    return category();
-                case "Books":
-                    return category();
-                case "Kithenware":
-                    return category();
-            }
-        })
-
-};
-
-
-function toys() {
-    connection.query("SELECT * FROM toymazon.store WHERE category = 'Toys'"),
-    errors();
-    function errors(err, data) {
-        if (err) {
-            throw err
-        } else {
-            console.log(data)
+        for (var i = 0; i < res.length; i++) {
+            var price = res[i].price
+            var priceString = price.toFixed(2);
+            console.log("Item#: " + res[i].id + " |" + " Product Name: " + res[i].product + " |" + " Price: " + "$" + priceString);
         }
-    }
-};
-start();
+
+    });
+}
