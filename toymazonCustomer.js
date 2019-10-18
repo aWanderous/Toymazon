@@ -64,7 +64,7 @@ function shop() {
                 id: buyID
             }, function (err, res) {
                 buyProduct = res[0].product;
-                console.log("Item #: " + buyID + " | " + res[0].product)
+                console.log(" Item #: " + buyID + " | " + res[0].product)
                 buyStock = res[0].stock;
                 buyPrice = res[0].price;
                 quantity();
@@ -78,8 +78,17 @@ function quantity() {
     inquirer
         .prompt([{
             name: "quantity",
-            message: "How many of " + buyProduct + "(s) would you like to purchase?",
-            type: "number"
+            message: "How many of " + buyProduct + "s would you like to purchase?",
+            type: "number",
+            validate: function (ans) {
+                if (isNaN(ans) === false) {
+                    return true;
+                }
+                console.log("\n", breaker);
+                console.log("\nPlease enter a valid number.");
+                quantity();
+                return false;
+            }
         }]).then(function (ans) {
             buyQuantity = ans.quantity;
             stockCheck();
@@ -106,5 +115,66 @@ function stockCheck() {
             });
     } else {
         sold();
+
+        function sold() {
+            console.log(breaker);
+            var totalPrice = buyQuantity * buyPrice;
+            var totalPriceRounded = totalPrice.toFixed(2);
+            inquirer
+                .prompt([{
+                    name: "checkout",
+                    message: "Checkout confirmation:\n Product: " + buyProduct + "\n Quantity: " + buyQuantity + "\n Total price: $" + totalPriceRounded + "\n Is this correct? ",
+                    type: "confirm",
+                    default: false
+                }]).then(function (ans) {
+                    if (ans.checkout) {
+                        updateStock();
+                    } else {
+                        inquirer
+                            .prompt([{
+                                name: "more",
+                                message: "Would you like to purchase another product?",
+                                type: "confirm"
+                            }]).then(function (ans) {
+                                if (ans.more) {
+                                    catalogue();
+                                } else {
+                                    console.log("\n Thank you for shopping at Toymazon! Have a lovely day!")
+                                    console.log(breaker);
+                                    connection.end();
+                                }
+                            })
+
+                    }
+
+                    function updateStock() {
+                        console.log(breaker);
+                        var query2 = "UPDATE toymazon.store SET ? WHERE ?";
+                        connection.query(query2, [{
+                                stock: quantityCheck
+                            }, {
+                                id: buyID
+                            }],
+                            function (err, res) {
+                                console.log("Your order of " + buyQuantity + " " + buyProduct + "(s) will be send to you soon.");
+                                inquirer
+                                    .prompt([{
+                                        name: "more",
+                                        message: "Would you like to purchase another product?",
+                                        type: "confirm"
+                                    }]).then(function (ans) {
+                                        if (ans.more) {
+                                            catalogue();
+                                        } else {
+                                            console.log("\n Thank you for shopping at Toymazon! Have a lovely day!")
+                                            console.log(breaker);
+                                            connection.end();
+                                        }
+                                    })
+                            })
+                    }
+                })
+
+        }
     }
 };
