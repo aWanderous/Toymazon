@@ -37,11 +37,11 @@ function catalogue() {
             var priceString = price.toFixed(2);
             console.log("Item #: " + res[i].id + " | Product Name: " + res[i].product + " | Price: $" + priceString);
         }
-        shopping();
+        shop();
     });
 };
 
-function shopping() {
+function shop() {
     console.log(breaker);
     inquirer
         .prompt([{
@@ -54,15 +54,17 @@ function shopping() {
                 }
                 console.log("\n", breaker);
                 console.log("\nPlease enter a valid Item ID number.");
-                shopping();
+                shop();
                 return false;
             }
         }]).then(function (ans) {
             buyID = ans.buy;
             var query1 = "SELECT product, price, stock FROM toymazon.store WHERE ?"
-            connection.query(query1, {id: buyID }, function (err, res){
+            connection.query(query1, {
+                id: buyID
+            }, function (err, res) {
                 buyProduct = res[0].product;
-                console.log("Item #: " + itemID + " | " + res[0].product)
+                console.log("Item #: " + buyID + " | " + res[0].product)
                 buyStock = res[0].stock;
                 buyPrice = res[0].price;
                 quantity();
@@ -71,14 +73,38 @@ function shopping() {
         });
 };
 
-function quantity(){
+function quantity() {
+    console.log(breaker)
     inquirer
-    .prompt([{
-        name: "quantity",
-        message: "How many of " + buyProduct + "(s) would you like to purchase?",
-        type: "number"
-    }]).then(function (ans){
-        buyQuantity = ans.quantity;
-        enoughStock();
-    }) 
+        .prompt([{
+            name: "quantity",
+            message: "How many of " + buyProduct + "(s) would you like to purchase?",
+            type: "number"
+        }]).then(function (ans) {
+            buyQuantity = ans.quantity;
+            stockCheck();
+        })
+};
+
+function stockCheck() {
+    var quantityCheck = buyStock - buyQuantity;
+    if (quantityCheck <= 0) {
+        inquirer
+            .prompt([{
+                name: "change",
+                message: "Unfortunately we currently only have " + buyStock + " available of the " + buyProduct + ".\n Would you like to:",
+                type: "list",
+                choices: ["Purchase another amount", "Select another item to purchase"]
+            }]).then(function (ans) {
+
+                switch (ans.change) {
+                    case "Purchase another amount":
+                        return quantity();
+                    case "Select another item to purchase":
+                        return catalogue();
+                }
+            });
+    } else {
+        sold();
+    }
 };
